@@ -23,7 +23,7 @@
         <file>
   		    <source>${project.build.directory}/${artifactId}.jar</source>
   		    <outputDirectory>/plugins/</outputDirectory>
-  		    <destName>MoarOre.jar</destName>
+  		    <destName>CraftBox.jar</destName>
         </file>
     </files>
 </assembly>
