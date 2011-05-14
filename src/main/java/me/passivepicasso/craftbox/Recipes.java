@@ -78,6 +78,25 @@ public class Recipes {
         getLog().log(Level.INFO, "Redstone Ore recipe submitted");
     }
 
+    public static void addSoulSandRecipe() {
+        ItemStack soulSand = new ItemStack(Material.SOUL_SAND, 1);
+        ShapelessRecipe soulSandRecipe = new ShapelessRecipe(soulSand);
+        soulSandRecipe.addIngredient(1, Material.SAND);
+        soulSandRecipe.addIngredient(1, Material.WATER_BUCKET);
+        getServer().addRecipe(soulSandRecipe);
+        getLog().log(Level.INFO, "Soul Sand recipe submitted");
+    }
+
+    public static void addWebRecipe() {
+        ItemStack web = new ItemStack(Material.WEB, 1);
+        ShapedRecipe webRecipe = new ShapedRecipe(web);
+        webRecipe.shape("s s", " S ", "s s");
+        webRecipe.setIngredient('s', Material.STRING);
+        webRecipe.setIngredient('S', Material.SOUL_SAND);
+        getServer().addRecipe(webRecipe);
+        getLog().log(Level.INFO, "Web recipe submitted");
+    }
+
     public static final Logger getLog() {
         return CraftBox.getLog();
     }

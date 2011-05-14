@@ -45,6 +45,8 @@ public class CraftBox extends JavaPlugin {
         Recipes.addOreToRedstone();
         Recipes.addOreToLapis();
         Recipes.addDiamondRecipe();
+        Recipes.addWebRecipe();
+        Recipes.addSoulSandRecipe();
         System.out.println(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!");
     }
 
