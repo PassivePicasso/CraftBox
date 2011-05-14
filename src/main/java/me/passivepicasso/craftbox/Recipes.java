@@ -80,9 +80,22 @@ public class Recipes {
 
     public static void addSoulSandRecipe() {
         ItemStack soulSand = new ItemStack(Material.SOUL_SAND, 1);
+
+        MaterialData death = new MaterialData(Material.BONE.getId());
+        MaterialData water = new MaterialData(Material.WATER_BUCKET);
+        MaterialData fire = new MaterialData(Material.LAVA);
+        MaterialData sand = new MaterialData(Material.SAND);
+        MaterialData sacrifice = new MaterialData(Material.PORK);
+        MaterialData faces = new MaterialData(Material.JACK_O_LANTERN);
+
         ShapelessRecipe soulSandRecipe = new ShapelessRecipe(soulSand);
-        soulSandRecipe.addIngredient(1, Material.SAND);
-        soulSandRecipe.addIngredient(1, Material.WATER_BUCKET);
+        soulSandRecipe.addIngredient(1, death);
+        soulSandRecipe.addIngredient(1, sand);
+        soulSandRecipe.addIngredient(1, water);
+        soulSandRecipe.addIngredient(1, fire);
+        soulSandRecipe.addIngredient(1, sacrifice);
+        soulSandRecipe.addIngredient(1, faces);
+
         getServer().addRecipe(soulSandRecipe);
         getLog().log(Level.INFO, "Soul Sand recipe submitted");
     }
