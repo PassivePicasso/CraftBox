@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>CraftBox</groupId>
   <artifactId>CraftBox</artifactId>
-  <version>0.1</version>
+  <version>0.1.2</version>
   <name>CraftBox</name>
   <description>Simple plugin providing a crafting recipe set to allow for the creation of coal ore blocks, slime balls and diamond</description>
   <dependencies>
