@@ -1,5 +1,14 @@
 name: CraftBox
 main: me.passivepicasso.craftbox.CraftBox
-version: 0.1
+version: 0.2.0
 author: By PassivePicasso
 description : Minecraft Server mod to allow users to craft a multitude of items previously inaccessible by crafting
+commands:
+  toggleRecipe:
+    description: Toggle a recipe.
+    usage: |
+           /toggleRecipe RecipeResult
+  tr:
+    description: Toggle a recipe.
+    usage: |
+           /toggleRecipe RecipeResult

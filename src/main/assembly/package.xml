@@ -24,7 +24,6 @@
   		    <source>${project.build.directory}/${artifactId}.jar</source>
   		    <outputDirectory>/plugins/</outputDirectory>
   		    <destName>CraftBox.jar</destName>
-
         </file>
     </files>
 </assembly>
