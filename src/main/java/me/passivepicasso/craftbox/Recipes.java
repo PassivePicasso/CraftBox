@@ -128,6 +128,7 @@ public class Recipes {
     }
 
     public static void addSpongeRecipe() {
+
     }
 
     public static void addWebRecipe() {

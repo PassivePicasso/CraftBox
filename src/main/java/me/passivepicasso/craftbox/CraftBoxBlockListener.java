@@ -1,154 +1,87 @@
 package me.passivepicasso.craftbox;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
+
+import me.passivepicasso.util.BlockMatrixNode;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockBurnEvent;
-import org.bukkit.event.block.BlockCanBuildEvent;
-import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockDispenseEvent;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockListener;
-import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
-import org.bukkit.event.block.LeavesDecayEvent;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.block.SnowFormEvent;
 import org.bukkit.material.RedstoneWire;
 
 public class CraftBoxBlockListener extends BlockListener {
-    private static CraftBox plugin;
+    private CraftBox        plugin;
 
-    public static void initialize( CraftBox plugin ) {
-        CraftBoxBlockListener.plugin = plugin;
-    }
+    HashMap<Block, Integer> getRedstoneOre = new HashMap<Block, Integer>();
 
-    private HashSet<Block> checkedBlocks = new HashSet<Block>();
-
-    @Override
-    public void onBlockBreak( BlockBreakEvent event ) {
-    }
-
-    @Override
-    public void onBlockBurn( BlockBurnEvent event ) {
-    }
-
-    @Override
-    public void onBlockCanBuild( BlockCanBuildEvent event ) {
-    }
-
-    @Override
-    public void onBlockDamage( BlockDamageEvent event ) {
-    }
-
-    @Override
-    public void onBlockDispense( BlockDispenseEvent event ) {
-    }
-
-    @Override
-    public void onBlockFlow( BlockFromToEvent event ) {
-    }
-
-    @Override
-    public void onBlockFromTo( BlockFromToEvent event ) {
-    }
-
-    @Override
-    public void onBlockIgnite( BlockIgniteEvent event ) {
-    }
-
-    @Override
-    public void onBlockPhysics( BlockPhysicsEvent event ) {
-    }
-
-    @Override
-    public void onBlockPlace( BlockPlaceEvent event ) {
-        Block block = event.getBlock();
-        if (block.getTypeId() == Material.REDSTONE_ORE.getId()) {
-            int oldCurrent = 0;
-            for (BlockFace facing : EnumSet.allOf(BlockFace.class)) {
-                Block faced = block.getFace(facing);
-                if ((faced.getTypeId() == Material.REDSTONE_WIRE.getId()) || (faced.getTypeId() == Material.REDSTONE_TORCH_ON.getId()) || (faced.getTypeId() == Material.REDSTONE_TORCH_OFF.getId())
-                        || (faced.getTypeId() == Material.REDSTONE_ORE.getId())) {
-                    if (faced.getTypeId() == Material.REDSTONE_WIRE.getId()) {
-                        RedstoneWire rw = (RedstoneWire) faced.getState().getData();
-                        oldCurrent = rw.getData() > oldCurrent ? (int) rw.getData() : oldCurrent;
-                    }
-                }
-            }
-            if (oldCurrent > 0) {
-                BlockRedstoneEvent rsEvent = new BlockRedstoneEvent(block, oldCurrent, oldCurrent - 1);
-                plugin.getServer().getPluginManager().callEvent(rsEvent);
-            }
-        }
+    public void initialize( CraftBox plugin ) {
+        this.plugin = plugin;
     }
 
     @Override
     public void onBlockRedstoneChange( BlockRedstoneEvent event ) {
         Block block = event.getBlock();
-        checkedBlocks.add(block);
-        int blockCount = checkedBlocks.size();
-        int oldCurrent = 0;
-        if (block.getTypeId() == Material.REDSTONE_ORE.getId()) {
-            for (BlockFace facing : EnumSet.allOf(BlockFace.class)) {
-                Block faced = block.getFace(facing);
-                if (faced.getTypeId() == Material.REDSTONE_WIRE.getId()) {
-                    // RedstoneWire rw = (RedstoneWire) faced.getState().getData();
-                    oldCurrent = faced.getData() > oldCurrent ? (int) faced.getData() : oldCurrent;
-                }
-            }
+        // TypeId 74 == GLOWING_REDSTONE_ORE
+        // TpyeId 73 == REDSTONE_ORE
+        if ( event.getNewCurrent() == 0 && block.getTypeId() == 74 ) {
+            block.setTypeId(Material.REDSTONE_ORE.getId());
         }
-        event.setNewCurrent(oldCurrent);
-        for (BlockFace facing : EnumSet.of(BlockFace.DOWN, BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP)) {
-            Block faced = block.getFace(facing);
-            if (checkedBlocks.contains(faced)) {
-                continue;
-            }
-            if (!faced.isBlockIndirectlyPowered() && !faced.isBlockPowered()) {
-                if (block.getTypeId() == Material.REDSTONE_WIRE.getId()) {
-                    if (faced.getTypeId() == Material.REDSTONE_WIRE.getId()) {
-                        continue;
+        int newPower = event.getNewCurrent() - (event.getNewCurrent() == 0 ? 0 : 1);
+
+        BlockMatrixNode oreCircuit = new BlockMatrixNode(block, new HashMap<Block, BlockMatrixNode>());
+
+        if ( block.getTypeId() == 73 || block.getTypeId() == 74 ) {
+            if ( event.getNewCurrent() > event.getOldCurrent() ) {
+                oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.REDSTONE_ORE)));
+                oreCircuit.floodFill();
+                if ( oreCircuit.getBlockMatrix().size() > 1 ) {
+                    for (Block change : oreCircuit.getBlockMatrix()) {
+                        change.setTypeId(74);
                     }
                 }
-                if (faced.getTypeId() == Material.REDSTONE_ORE.getId()) {
-                    System.out.println(event.getBlock().getType().toString());
-                    if (faced.getTypeId() == Material.REDSTONE_WIRE.getId()) {
-                        RedstoneWire rw = (RedstoneWire) faced.getState().getData();
-                        if (rw.isPowered()) {
-                            continue;
-                        } else {
-                            faced.setData((byte) oldCurrent);
+            } else if ( event.getNewCurrent() != event.getOldCurrent() ) {
+                oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.GLOWING_REDSTONE_ORE)));
+                oreCircuit.floodFill();
+                if ( oreCircuit.getBlockMatrix().size() > 1 ) {
+                    for (Block change : oreCircuit.getBlockMatrix()) {
+                        change.setTypeId(73);
+                    }
+                }
+            }
+            if ( oreCircuit.getBlockMatrix().size() > 1 ) {
+                oreCircuit.setFilter(EnumSet.complementOf(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
+                for (BlockMatrixNode next : oreCircuit.getBlockMatrixNodes()) {
+                    for (Block eventTarget : next.getFilteredExternalAdjancentBlocks()) {
+                        int oldPower = 0;
+                        if ( eventTarget.getState() instanceof RedstoneWire ) {
+                            oldPower = eventTarget.getBlockPower();
+                            eventTarget.setData((byte) newPower);
                         }
-                        BlockRedstoneEvent rsEvent = new BlockRedstoneEvent(faced, event.getOldCurrent(), event.getNewCurrent());
-                        plugin.getServer().getPluginManager().callEvent(rsEvent);
-                    } else {
-                        BlockRedstoneEvent rsEvent = new BlockRedstoneEvent(faced, event.getOldCurrent(), event.getNewCurrent());
-                        plugin.getServer().getPluginManager().callEvent(rsEvent);
+                        plugin.getServer().getPluginManager().callEvent(new BlockRedstoneEvent(eventTarget, oldPower, newPower));
                     }
                 }
             }
         }
-        if (blockCount == checkedBlocks.size()) {
-            checkedBlocks.clear();
-        }
     }
-
-    @Override
-    public void onLeavesDecay( LeavesDecayEvent event ) {
-    }
-
-    @Override
-    public void onSignChange( SignChangeEvent event ) {
-    }
-
-    @Override
-    public void onSnowForm( SnowFormEvent event ) {
-    }
-
+    // if ( block.getState() instanceof RedstoneWire || block.getTypeId() == 73 || block.getTypeId() == 74 || block.getData() > 0 ) {
+    // for (BlockFace face : EnumSet.of(BlockFace.DOWN, BlockFace.UP, BlockFace.WEST, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH)) {
+    // Block nextBlock = block.getFace(face);
+    // if ( nextBlock.getTypeId() == 73 || nextBlock.getTypeId() == 74 || nextBlock.getState() instanceof RedstoneWire ) {
+    // int oldPower = 0;
+    // if ( nextBlock.getTypeId() == Material.REDSTONE_ORE.getId() ) {
+    // nextBlock.setTypeId(Material.GLOWING_REDSTONE_ORE.getId());
+    // oldPower = 0;
+    // getRedstoneOre.put(nextBlock, newPower);
+    // } else if ( nextBlock.getTypeId() == Material.GLOWING_REDSTONE_ORE.getId() ) {
+    // oldPower = getRedstoneOre.get(nextBlock);
+    // getRedstoneOre.put(nextBlock, newPower);
+    // } else {
+    // oldPower = nextBlock.getData();
+    // }
+    // }
+    // }
+    // }
 }

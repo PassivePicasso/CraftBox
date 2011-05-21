@@ -15,6 +15,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event.Priority;
+import org.bukkit.event.Event.Type;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,6 +26,7 @@ public class CraftBox extends JavaPlugin {
     private final HashMap<Player, Boolean> debugees               = new HashMap<Player, Boolean>();
     private static Logger                  log                    = null;
     private static DatabaseVersion         currentDatabaseVersion = new DatabaseVersion();
+    private final CraftBoxBlockListener    blockListener          = new CraftBoxBlockListener();
 
     static {
         currentDatabaseVersion.setMajor(0);
@@ -43,7 +46,7 @@ public class CraftBox extends JavaPlugin {
     }
 
     public boolean isDebugging( final Player player ) {
-        if (debugees.containsKey(player)) {
+        if ( debugees.containsKey(player) ) {
             return debugees.get(player);
         } else {
             return false;
@@ -58,12 +61,13 @@ public class CraftBox extends JavaPlugin {
         setLog(getServer().getLogger());
         PluginDescriptionFile pdfFile = this.getDescription();
         Recipes.initialize(this);
+        blockListener.initialize(this);
 
         DatabaseManager.initialize("CraftBox", currentDatabaseVersion);
 
         Set<RecipeState> recipeStates = DatabaseManager.getSet(RecipeState.class);
 
-        if (recipeStates.size() == 0) {
+        if ( recipeStates.size() == 0 ) {
             getLog().log(Level.INFO, "[CraftBox] No Recipe settings found, defaulting all recipes to on.");
             for (Recipes.Result result : EnumSet.allOf(Recipes.Result.class)) {
                 RecipeState state = Recipes.enableRecipe(result);
@@ -74,10 +78,11 @@ public class CraftBox extends JavaPlugin {
         } else {
             Recipes.loadRecipes(recipeStates);
             for (RecipeState recipeState : Recipes.getRecipes()) {
-                if (recipeState.getRecipeState()) {
+                if ( recipeState.getRecipeState() ) {
                     Recipes.activateRecipe(recipeState);
                 }
-                getLog().log(Level.INFO, "[CraftBox] Recipe " + recipeState.getResult().toString() + (recipeState.getRecipeState() ? " activated." : " inactive."));
+                getLog().log(Level.INFO,
+                        "[CraftBox] Recipe " + recipeState.getResult().toString() + (recipeState.getRecipeState() ? " activated." : " inactive."));
             }
         }
         setupCommands();
@@ -89,17 +94,20 @@ public class CraftBox extends JavaPlugin {
     @Override
     public void onLoad() {
         setLog(getServer().getLogger());
-        CraftBoxBlockListener.initialize(this);
     }
 
     public void setDebugging( final Player player, final boolean value ) {
         debugees.put(player, value);
     }
 
-    @SuppressWarnings("unused")
     private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
-        // pm.registerEvent(Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+        try {
+            pm.registerEvent(Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+            pm.registerEvent(Type.BLOCK_PHYSICS, blockListener, Priority.Normal, this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // pm.registerEvent(Type.BLOCK_PLACE, blockListener, Priority.Normal, this);
     }
 
@@ -108,12 +116,12 @@ public class CraftBox extends JavaPlugin {
         PluginCommand pcShort = getCommand("tr");
         CommandExecutor commandExecutor = new CommandExecutor() {
             public boolean onCommand( CommandSender sender, Command command, String label, String[] args ) {
-                if (!(sender instanceof Player)) {
+                if ( !(sender instanceof Player) ) {
                     try {
                         Result result = Recipes.Result.valueOf(args[0]);
                         boolean state = Recipes.toggleRecipe(result);
                         sender.sendMessage("Recipe for " + result.toString() + " has been toggled " + (state ? "on." : "off."));
-                        if (!state) {
+                        if ( !state ) {
                             sender.sendMessage("However this change will not take effect until the server is restarted.");
                         } else {
                             sender.sendMessage("However this change will not take effect until the server is reloaded.");
@@ -130,10 +138,10 @@ public class CraftBox extends JavaPlugin {
                 return false;
             }
         };
-        if (pc != null) {
+        if ( pc != null ) {
             pc.setExecutor(commandExecutor);
         }
-        if (pcShort != null) {
+        if ( pcShort != null ) {
             pcShort.setExecutor(commandExecutor);
         }
     }
