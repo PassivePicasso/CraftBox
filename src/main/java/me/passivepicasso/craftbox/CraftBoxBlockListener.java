@@ -1,16 +1,15 @@
 package me.passivepicasso.craftbox;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-
 import me.passivepicasso.util.BlockMatrixNode;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.material.RedstoneWire;
+
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class CraftBoxBlockListener extends BlockListener {
     private CraftBox        plugin;
@@ -35,8 +34,11 @@ public class CraftBoxBlockListener extends BlockListener {
 
         if ( block.getTypeId() == Material.REDSTONE_WIRE.getId() ) {
             block.setData((byte) event.getNewCurrent());
-            oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
-            for (Block eventTarget : oreCircuit.getFilteredExternalAdjancentBlocks()) {
+            HashSet<Material> filter = new HashSet<Material>();
+            filter.add(Material.REDSTONE_ORE);
+            filter.add(Material.GLOWING_REDSTONE_ORE);
+            oreCircuit.setFilter(filter);
+            for (Block eventTarget : oreCircuit.getFilteredExternalAdjacentBlocks()) {
                 int oldPower = 0;
                 if ( eventTarget.getState().getData() instanceof RedstoneWire ) {
                     if ( eventTarget.getBlockPower() > 0 ) {
@@ -65,7 +67,7 @@ public class CraftBoxBlockListener extends BlockListener {
             }
             oreCircuit.setFilter(EnumSet.complementOf(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
             for (BlockMatrixNode next : oreCircuit.getBlockMatrixNodes()) {
-                for (Block eventTarget : next.getFilteredExternalAdjancentBlocks()) {
+                for (Block eventTarget : next.getFilteredExternalAdjacentBlocks()) {
                     int oldPower = 0;
                     if ( eventTarget.getState().getData() instanceof RedstoneWire ) {
                         oldPower = eventTarget.getBlockPower();
