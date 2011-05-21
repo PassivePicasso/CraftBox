@@ -33,35 +33,45 @@ public class CraftBoxBlockListener extends BlockListener {
 
         BlockMatrixNode oreCircuit = new BlockMatrixNode(block, new HashMap<Block, BlockMatrixNode>());
 
+        if ( block.getTypeId() == Material.REDSTONE_WIRE.getId() ) {
+            block.setData((byte) event.getNewCurrent());
+            oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
+            for (Block eventTarget : oreCircuit.getFilteredExternalAdjancentBlocks()) {
+                int oldPower = 0;
+                if ( eventTarget.getState().getData() instanceof RedstoneWire ) {
+                    if ( eventTarget.getBlockPower() > 0 ) {
+                        continue;
+                    }
+                    oldPower = eventTarget.getBlockPower();
+                    eventTarget.setData((byte) newPower);
+                }
+                plugin.getServer().getPluginManager().callEvent(new BlockRedstoneEvent(eventTarget, oldPower, newPower));
+            }
+        }
+
         if ( block.getTypeId() == 73 || block.getTypeId() == 74 ) {
             if ( event.getNewCurrent() > event.getOldCurrent() ) {
                 oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.REDSTONE_ORE)));
                 oreCircuit.floodFill();
-                if ( oreCircuit.getBlockMatrix().size() > 1 ) {
-                    for (Block change : oreCircuit.getBlockMatrix()) {
-                        change.setTypeId(74);
-                    }
+                for (Block change : oreCircuit.getBlockMatrix()) {
+                    change.setTypeId(74);
                 }
             } else if ( event.getNewCurrent() != event.getOldCurrent() ) {
                 oreCircuit.setFilter(new HashSet<Material>(EnumSet.of(Material.GLOWING_REDSTONE_ORE)));
                 oreCircuit.floodFill();
-                if ( oreCircuit.getBlockMatrix().size() > 1 ) {
-                    for (Block change : oreCircuit.getBlockMatrix()) {
-                        change.setTypeId(73);
-                    }
+                for (Block change : oreCircuit.getBlockMatrix()) {
+                    change.setTypeId(73);
                 }
             }
-            if ( oreCircuit.getBlockMatrix().size() > 1 ) {
-                oreCircuit.setFilter(EnumSet.complementOf(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
-                for (BlockMatrixNode next : oreCircuit.getBlockMatrixNodes()) {
-                    for (Block eventTarget : next.getFilteredExternalAdjancentBlocks()) {
-                        int oldPower = 0;
-                        if ( eventTarget.getState() instanceof RedstoneWire ) {
-                            oldPower = eventTarget.getBlockPower();
-                            eventTarget.setData((byte) newPower);
-                        }
-                        plugin.getServer().getPluginManager().callEvent(new BlockRedstoneEvent(eventTarget, oldPower, newPower));
+            oreCircuit.setFilter(EnumSet.complementOf(EnumSet.of(Material.REDSTONE_ORE, Material.GLOWING_REDSTONE_ORE)));
+            for (BlockMatrixNode next : oreCircuit.getBlockMatrixNodes()) {
+                for (Block eventTarget : next.getFilteredExternalAdjancentBlocks()) {
+                    int oldPower = 0;
+                    if ( eventTarget.getState().getData() instanceof RedstoneWire ) {
+                        oldPower = eventTarget.getBlockPower();
+                        eventTarget.setData((byte) newPower);
                     }
+                    plugin.getServer().getPluginManager().callEvent(new BlockRedstoneEvent(eventTarget, oldPower, newPower));
                 }
             }
         }
